@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>斯多葛主义 · 掌控你能掌控的</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Sans+SC:wght@200;300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#fafaf8;--paper-rgb:250,250,248;
+  --ink:#0a0a0a;--ink-rgb:10,10,10;
+  --grey-1:#f0f0ee;--grey-2:#d4d4d2;--grey-3:#737373;
+  --accent:#002FA7;--accent-rgb:0,47,167;--accent-on:#ffffff;
+  --text-primary:#0a0a0a;--text-secondary:#525252;--text-helper:#737373;
+  --border-subtle:#e0e0e0;--border-strong:#a3a3a3;
+  --sans:"Inter","Helvetica Neue","Helvetica","Arial",system-ui,sans-serif;
+  --sans-zh:"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  --mono:"JetBrains Mono","IBM Plex Mono","Consolas","Courier New",monospace;
+  --sp-4:12px;--sp-5:16px;--sp-6:24px;--sp-7:32px;--sp-8:40px;--sp-9:48px;
+  --nav-safe-bottom:8vh;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--paper);color:var(--ink);font-family:var(--sans),var(--sans-zh);-webkit-font-smoothing:antialiased}
+
+/* ── 背景 canvas ── */
+canvas.bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block;opacity:.55;mix-blend-mode:multiply;pointer-events:none}
+body.dark-bg canvas.bg{mix-blend-mode:screen;opacity:.42}
+body.low-power canvas.bg,body.low-power canvas.ascii-bg{display:none!important}
+
+/* ── 翻页 deck ── */
+#deck{position:fixed;inset:0;width:10000vw;height:100vh;display:flex;flex-wrap:nowrap;transition:transform .9s cubic-bezier(.77,0,.175,1);z-index:10;will-change:transform}
+.slide{width:100vw;height:100vh;flex:0 0 100vw;position:relative;padding:5.5vh 5vw 7vh;display:flex;flex-direction:column;overflow:hidden;background:var(--paper);color:var(--ink)}
+.slide.dark{background:var(--ink);color:var(--paper)}
+.slide.accent{background:var(--accent);color:var(--accent-on)}
+.slide.grey{background:var(--grey-1)}
+
+/* ── canvas-card (canvas-mode 全屏卡) ── */
+body.canvas-mode .slide{background:var(--paper);padding:0;align-items:stretch;justify-content:stretch}
+body.canvas-mode .slide.dark .canvas-card{background:var(--ink);color:var(--paper)}
+body.canvas-mode .slide.accent .canvas-card{background:var(--accent);color:var(--accent-on)}
+body.canvas-mode .slide.grey .canvas-card{background:var(--grey-1)}
+.canvas-card{width:100vw;height:100vh;background:var(--paper);color:var(--ink);padding:5.6vh 5vw 4.4vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.slide.split .canvas-card{padding:0;flex-direction:row}
+canvas.ascii-bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;mix-blend-mode:screen;opacity:.92}
+.canvas-card>*:not(.ascii-bg){position:relative;z-index:1}
+
+/* ── chrome-min 顶部元信息 ── */
+.chrome-min{display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--mono);font-size:14px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--text-helper);flex:0 0 auto;margin-bottom:var(--sp-9)}
+.chrome-min.tight{margin-bottom:var(--sp-7)}
+.chrome-min .l,.chrome-min .r{max-width:48vw;line-height:1.5}
+.slide.dark .chrome-min,.half.b-accent .chrome-min,.half.b-ink .chrome-min{color:rgba(255,255,255,.62)}
+
+/* ── t-meta / t-cat ── */
+.t-meta{font-family:var(--mono);font-size:14px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--text-helper);line-height:1.45}
+.t-cat{font-family:var(--mono);font-size:14px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--text-helper);line-height:1.3}
+.t-cat.accent{color:var(--accent)}
+
+/* ── 标题体系 ── */
+.h-xl-zh{font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:5vw;line-height:1.05;letter-spacing:-.025em}
+.lead{font-family:var(--sans),var(--sans-zh);font-weight:400;font-size:1.55vw;line-height:1.4;letter-spacing:-.005em;opacity:.86}
+
+/* ── 点阵装饰 ── */
+.dot-mat{--d:14px;background-image:radial-gradient(currentColor 1.4px,transparent 1.6px);background-size:var(--d) var(--d);opacity:.5}
+.dot-mat.xl{--d:34px}
+.ring-mat{--d:18px;background-image:radial-gradient(circle at 50% 50%,transparent 2px,currentColor 2px,currentColor 2.6px,transparent 2.7px);background-size:var(--d) var(--d);opacity:.55}
+.ring-mat.lg{--d:28px}
+
+/* ── Duo Compare ── */
+.duo-compare{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 3.4vw;flex:1;align-items:stretch;margin-top:6vh}
+.duo-compare .vrule{background:var(--grey-2);width:1px;align-self:stretch}
+.duo-compare .col{display:flex;flex-direction:column;gap:1.6vh;padding:0 .4vw}
+.duo-compare .col-tag{font-family:var(--mono);font-size:max(14px,.78vw);letter-spacing:.16em;text-transform:uppercase;color:var(--grey-3)}
+.duo-compare .col-ttl{font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:3.6vw;line-height:1;letter-spacing:-.03em}
+.duo-compare .col.accent .col-ttl{color:var(--accent)}
+.duo-compare .col-desc{font-family:var(--sans),var(--sans-zh);font-size:max(17px,1.04vw);line-height:1.55;opacity:.78;max-width:30vw}
+.duo-compare .col-list{list-style:none;display:flex;flex-direction:column;gap:.9vh;margin-top:auto;padding-top:2vh;border-top:1px solid var(--grey-2)}
+.duo-compare .col-list li{font-family:var(--sans),var(--sans-zh);font-size:max(16px,.94vw);line-height:1.5;padding-left:1.4em;position:relative}
+.duo-compare .col-list li::before{content:"";position:absolute;left:0;top:.65em;width:.5em;height:1px;background:currentColor;opacity:.55}
+.duo-compare .col.accent .col-list li::before{background:var(--accent);opacity:1}
+
+/* ── Split 左右分屏 ── */
+.split-half{display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;align-items:stretch}
+.split-half>.half{padding:5.6vh 3.6vw 4.4vh;display:flex;flex-direction:column;min-width:0}
+.split-half>.half.b-accent{background:var(--accent);color:var(--accent-on)}
+.split-half>.half.b-ink{background:var(--ink);color:var(--paper)}
+
+/* ── 四格卡片 (S19) ── */
+.four-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1.4vw;flex:1;margin-top:3.6vh;align-items:stretch}
+.fc-card{display:flex;flex-direction:column;gap:1.2vh;padding:2.6vh 1.6vw 2vh;background:var(--grey-1)}
+.fc-card.accent{background:var(--accent);color:var(--accent-on)}
+.fc-num{font-family:var(--mono);font-size:max(14px,.8vw);letter-spacing:.16em;opacity:.55}
+.fc-ttl{font-family:var(--sans),var(--sans-zh);font-weight:500;font-size:max(20px,1.6vw);line-height:1.2;letter-spacing:-.01em}
+.fc-sub{font-family:var(--mono);font-size:max(13px,.76vw);letter-spacing:.12em;text-transform:uppercase;color:var(--grey-3);margin-top:.3vh}
+.fc-card.accent .fc-sub{color:rgba(255,255,255,.65)}
+.fc-desc{font-family:var(--sans),var(--sans-zh);font-size:max(16px,.94vw);line-height:1.55;opacity:.78;margin-top:auto}
+.fc-card.accent .fc-desc{opacity:.88}
+
+/* ── 三力卡 (S13) ── */
+.three-forces{display:grid;grid-template-columns:1fr 2fr;gap:2vw;flex:1;margin-top:3.6vh;align-items:stretch}
+.tf-hero{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:3.2vh 2vw;display:flex;flex-direction:column;justify-content:flex-end}
+.tf-cards{display:flex;flex-direction:column;gap:1.4vh}
+.tf-card{padding:2.2vh 1.8vw;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;gap:.9vh;flex:1}
+.tf-card.accent{background:var(--accent);color:var(--accent-on);border-color:transparent}
+
+/* ── Image Hero (S22) ── */
+.frame-img{overflow:hidden;position:relative;background:var(--grey-1);width:100%}
+.frame-img>img{width:100%;height:100%;object-fit:cover;object-position:center 35%;display:block}
+.frame-img.r-21x9{aspect-ratio:21/9;max-height:46vh}
+.img-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1vh}
+
+/* ── 动效基础 ── */
+[data-anim]{opacity:1}
+body.motion-ready [data-anim]{opacity:0}
+body.low-power #deck{transition:none!important}
+body.low-power *,body.low-power *::before,body.low-power *::after{animation:none!important;transition:none!important}
+body.low-power.motion-ready [data-anim],body.low-power [data-anim]{opacity:1!important;transform:none!important}
+#overview [data-anim]{opacity:1!important;transform:none!important}
+#overview .slide *{animation:none!important;transition:none!important}
+
+/* ── 导航 dot ── */
+#nav{position:fixed;left:50%;bottom:2vh;transform:translateX(-50%);z-index:30;display:flex;gap:10px;padding:0;background:transparent;border:0}
+#nav .dot{width:6px;height:6px;background:rgba(0,0,0,.28);cursor:pointer;transition:all .25s ease;border:0;padding:0;border-radius:0}
+#nav .dot:hover{background:rgba(0,0,0,.55)}
+#nav .dot.active{background:var(--accent);width:18px}
+body.dark-bg #nav .dot{background:rgba(255,255,255,.32)}
+body.dark-bg #nav .dot.active{background:var(--accent)}
+#hint{position:fixed;bottom:2.4vh;right:2.5vw;z-index:30;font-family:var(--mono);font-size:14px;letter-spacing:.14em;text-transform:uppercase;opacity:.4}
+body.dark-bg #hint{color:var(--paper)}
+body.low-power #hint{color:var(--accent);opacity:.72}
+
+body.is-win [style*="font-weight:200"]{font-weight:300!important}
+</style>
+</head>
+<body class="canvas-mode">
+<script>
+if(/Win/i.test(navigator.platform||navigator.userAgentData?.platform||''))document.body.classList.add('is-win');
+(function(){
+  const KEY='guizang-ppt-low-power';
+  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const stored=localStorage.getItem(KEY);
+  window.__lowPowerMode=stored==='1'||(stored===null&&reduced);
+  function updateHint(){const h=document.getElementById('hint');if(h)h.textContent=`← → 翻页 · B ${window.__lowPowerMode?'动态':'静态'} · ESC 索引`}
+  window.__setLowPowerMode=function(on,opts={}){
+    window.__lowPowerMode=!!on;
+    document.body.classList.toggle('low-power',window.__lowPowerMode);
+    if(opts.persist!==false)localStorage.setItem(KEY,window.__lowPowerMode?'1':'0');
+    if(window.__lowPowerMode&&document.getAnimations)document.getAnimations().forEach(a=>a.cancel());
+    updateHint();
+    dispatchEvent(new CustomEvent('swiss-low-power-change',{detail:{on:window.__lowPowerMode}}));
+    if(window.__playSlide)window.__playSlide(window.__currentSlideIndex||0);
+  };
+  document.body.classList.toggle('low-power',window.__lowPowerMode);
+  addEventListener('DOMContentLoaded',updateHint,{once:true});
+})();
+</script>
+
+<canvas id="bg-grid" class="bg"></canvas>
+<div id="hint">← → 翻页 · B 静态 · ESC 索引</div>
+<div id="deck">
+
+<!-- ═══════════════════════════════════════════════════════════
+     P1 · S01 · 封面 · IKB 满屏 + ASCII 呼吸场
+     ═══════════════════════════════════════════════════════════ -->
+<section class="slide accent" data-layout="S01" data-animate="hero">
+<div class="canvas-card">
+  <canvas class="ascii-bg" aria-hidden="true"></canvas>
+  <div class="chrome-min">
+    <div class="l">斯多葛主义 · Stoicism Field Notes</div>
+    <div class="r">SS · 26.06.04 · 01 / 07</div>
+  </div>
+  <div style="flex:1;padding:0;display:grid;grid-template-rows:auto 1fr auto;gap:2.6vh">
+    <div data-anim="kicker" class="t-meta" style="color:rgba(255,255,255,.78);letter-spacing:.22em">Philosophy · 哲学手册</div>
+    <h1 data-anim="title" style="align-self:center;font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(10.4vw,17.6vh);line-height:.94;letter-spacing:-.025em;color:#fff">
+      掌控你<br/>能掌控的
+    </h1>
+    <div data-anim="bottom" style="display:grid;grid-template-rows:auto auto;gap:1.6vh;border-top:1px solid rgba(255,255,255,.22);padding-top:2vh">
+      <div class="lead" style="max-width:52ch;color:rgba(255,255,255,.86);font-weight:300">
+        斯多葛主义不是一门学科，不需要课堂，也不需要信仰。它是一套判断工具——帮你分清什么值得在乎、什么不值得在乎。
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:end">
+        <div class="t-meta" style="color:rgba(255,255,255,.55)">两千年前诞生于地中海 · 今日依然适用</div>
+        <div class="t-meta" style="color:rgba(255,255,255,.55)">→ swipe / arrow keys</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P2 · S09 · 控制二分法 · 点阵宣言页
+     ═══════════════════════════════════════════════════════════ -->
+<section class="slide" data-layout="S09" data-animate="statement-rise">
+<div class="canvas-card">
+  <div class="chrome-min">
+    <div class="l">核心原则 · Core Principle</div>
+    <div class="r">SS · 26.06.04 · 02 / 07</div>
+  </div>
+  <!-- 点阵装饰 -->
+  <span class="dot-mat xl" style="position:absolute;right:0;top:0;width:38vw;height:38vw;color:var(--accent);opacity:.12;pointer-events:none"></span>
+  <span class="ring-mat lg" style="position:absolute;left:3vw;bottom:8vh;width:14vw;height:14vw;color:var(--ink);opacity:.1;pointer-events:none"></span>
+
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <div data-anim="kicker" class="t-cat accent" style="margin-bottom:3.2vh">控制二分法 · Dichotomy of Control</div>
+    <h1 data-anim="title" style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(7.8vw,13.4vh);line-height:.96;letter-spacing:-.04em;max-width:80vw">
+      把世界上的一切<br/>分成两类
+    </h1>
+    <div data-anim="lead" style="margin-top:4.4vh;display:grid;grid-template-columns:1fr 1px 1fr;gap:0 4vw;max-width:74vw">
+      <div style="padding-right:2vw">
+        <div class="t-cat" style="color:var(--accent);margin-bottom:1.4vh">在你控制之内</div>
+        <p style="font-family:var(--sans),var(--sans-zh);font-size:max(18px,1.1vw);line-height:1.6;color:var(--text-primary);font-weight:400">你的判断、行动、面对困境的态度——全力投入，不保留。</p>
+      </div>
+      <div style="background:var(--grey-2)"></div>
+      <div style="padding-left:2vw">
+        <div class="t-cat" style="color:var(--text-helper);margin-bottom:1.4vh">不在你控制之内</div>
+        <p style="font-family:var(--sans),var(--sans-zh);font-size:max(18px,1.1vw);line-height:1.6;color:var(--text-secondary);font-weight:400">别人的看法、天气、市场走向、他人行为——彻底放手，不再内耗。</p>
+      </div>
+    </div>
+    <div data-anim="foot" style="margin-top:4vh;max-width:58vw">
+      <div style="border-top:2px solid var(--accent);padding-top:1.8vh">
+        <p style="font-family:var(--sans),var(--sans-zh);font-style:italic;font-size:max(17px,1.05vw);line-height:1.6;color:var(--text-secondary);font-weight:300">
+          "有些事情在我们的控制之内，有些则不在。"——爱比克泰德《手册》开篇第一句
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P3 · S13 · 三位巨人 · 奴隶 / 商人 / 皇帝
+     ═══════════════════════════════════════════════════════════ -->
+<section class="slide dark" data-layout="S13" data-animate="grid-reveal">
+<div class="canvas-card">
+  <div class="chrome-min">
+    <div class="l">三位传播者 · Three Giants</div>
+    <div class="r">SS · 26.06.04 · 03 / 07</div>
+  </div>
+  <div data-anim="head" style="display:flex;flex-direction:column;gap:.8vh">
+    <div class="t-cat" style="color:rgba(255,255,255,.45)">奴隶 · 政客 · 皇帝</div>
+    <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(5.2vw,9vh);line-height:1;letter-spacing:-.03em;color:var(--paper)">
+      三种入口，同一套哲学
+    </h2>
+  </div>
+  <div class="three-forces">
+    <!-- 左侧英雄块 -->
+    <div class="tf-hero" data-anim="left">
+      <div class="t-meta" style="color:rgba(255,255,255,.4);margin-bottom:2vh">SLAVE · EPICTETUS · 约55—135年</div>
+      <div style="font-family:var(--sans);font-weight:200;font-size:min(7vw,12vh);line-height:.9;letter-spacing:-.04em;color:var(--paper)">01</div>
+      <h3 style="font-family:var(--sans),var(--sans-zh);font-weight:300;font-size:max(20px,1.6vw);line-height:1.1;color:var(--paper);margin-top:1.4vh">爱比克泰德</h3>
+      <p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,1vw);line-height:1.55;color:rgba(255,255,255,.72);margin-top:1.4vh;font-weight:300">
+        出生为奴，无财无权。主人当着他的面扭断他的腿，他保持平静。一个什么都没有的人，教会了后世什么是真正的自由。
+      </p>
+    </div>
+    <!-- 右侧三张卡 -->
+    <div class="tf-cards">
+      <div class="tf-card" data-anim="right">
+        <div class="t-cat" style="color:rgba(255,255,255,.4)">POLITICIAN · SENECA · 约前4—65年</div>
+        <div style="font-family:var(--sans);font-weight:200;font-size:min(2.4vw,4.2vh);line-height:1;color:var(--paper);letter-spacing:-.03em;margin-top:.4vh">02 — 塞涅卡</div>
+        <p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,.98vw);line-height:1.5;color:rgba(255,255,255,.68);font-weight:300;margin-top:.8vh">
+          罗马最富有的人之一，尼禄的导师。他在被赐死时平静地切开血管，与朋友谈话直到最后一刻。
+          <br/><em style="color:rgba(255,255,255,.55)">"我们受苦，不是因为事情本身，而是因为我们对事情的看法。"</em>
+        </p>
+      </div>
+      <div class="tf-card accent" data-anim="right">
+        <div class="t-cat" style="color:rgba(255,255,255,.6)">EMPEROR · MARCUS AURELIUS · 121—180年</div>
+        <div style="font-family:var(--sans);font-weight:200;font-size:min(2.4vw,4.2vh);line-height:1;color:rgba(255,255,255,.95);letter-spacing:-.03em;margin-top:.4vh">03 — 马可·奥勒留</div>
+        <p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,.98vw);line-height:1.5;color:rgba(255,255,255,.82);font-weight:300;margin-top:.8vh">
+          罗马帝国皇帝。《沉思录》从来不是写给别人看的——那是他每天早晨给自己的提醒：你终将腐烂成土，你的愤怒毫无意义。这不是悲观，这是清醒。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P4 · S19 · 四根德性柱子
+     ═══════════════════════════════════════════════════════════ -->
+<section class="slide" data-layout="S19" data-animate="grid-reveal">
+<div class="canvas-card">
+  <div class="chrome-min">
+    <div class="l">美德体系 · Four Virtues</div>
+    <div class="r">SS · 26.06.04 · 04 / 07</div>
+  </div>
+  <div data-anim="head" style="display:flex;flex-direction:column;gap:1.2vh">
+    <div class="t-cat accent">四根德性柱子 · The Stoic Virtues</div>
+    <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(5.6vw,9.8vh);line-height:1;letter-spacing:-.03em">
+      只有一件事是真正意义上的"好"：德性
+    </h2>
+    <p style="font-family:var(--sans),var(--sans-zh);font-size:max(18px,1.1vw);line-height:1.5;color:var(--text-secondary);max-width:60ch;font-weight:400">
+      健康、财富、声誉——这些可以追求，但失去它们不构成真正的损失。这四种德性完全在你的控制之内。
+    </p>
+  </div>
+  <div style="width:100%;height:2px;background:var(--accent);margin:3vh 0 0"></div>
+  <div class="four-cards">
+    <div class="fc-card accent">
+      <div class="fc-num">01</div>
+      <div class="fc-ttl">智慧</div>
+      <div class="fc-sub">Sophia · Wisdom</div>
+      <div class="fc-desc" style="color:rgba(255,255,255,.84)">明辨是非，做出正确判断。面对复杂局面时看清本质的能力。</div>
+    </div>
+    <div class="fc-card">
+      <div class="fc-num">02</div>
+      <div class="fc-ttl">勇气</div>
+      <div class="fc-sub">Andreia · Courage</div>
+      <div class="fc-desc">面对恐惧、痛苦和不确定时，仍然坚持正确的行动。</div>
+    </div>
+    <div class="fc-card">
+      <div class="fc-num">03</div>
+      <div class="fc-ttl">正义</div>
+      <div class="fc-sub">Dikaiosyne · Justice</div>
+      <div class="fc-desc">公平对待他人，履行对社会的责任与义务。</div>
+    </div>
+    <div class="fc-card">
+      <div class="fc-num">04</div>
+      <div class="fc-ttl">节制</div>
+      <div class="fc-sub">Sophrosyne · Temperance</div>
+      <div class="fc-desc">克制欲望，不被冲动左右。对外物保持内心的独立。</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P5 · S22 · Image Hero · 现代复兴 + 配图01
+     ═══════════════════════════════════════════════════════════ -->
+<section class="slide" data-layout="S22" data-animate="grid-reveal" data-image-slot="s22-hero-21x9">
+<div class="canvas-card" style="padding:0;flex-direction:column">
+  <!-- 顶部全宽图 21:9 -->
+  <div class="frame-img r-21x9" style="width:100%;flex:0 0 auto">
+    <img src="images/05-revival.svg" alt="斯多葛主义现代复兴" style="object-fit:cover;object-position:center center" onerror="this.style.display='none'">
+  </div>
+  <!-- 下方内容区 -->
+  <div style="flex:1;padding:3.6vh 5vw 4.4vh;display:grid;grid-template-columns:6fr 6fr;gap:4vw;align-content:start">
+    <div>
+      <div class="chrome-min tight" style="margin-bottom:2vh">
+        <div class="l">现代复兴 · Modern Revival</div>
+        <div class="r">SS · 26.06.04 · 05 / 07</div>
+      </div>
+      <h2 data-anim="title" style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(4.2vw,7.4vh);line-height:1.02;letter-spacing:-.03em">
+        为何 21 世纪的人<br/>又开始读<br/>马可·奥勒留？
+      </h2>
+    </div>
+    <div data-anim="right" style="display:flex;flex-direction:column;gap:1.8vh;padding-top:3.8vh">
+      <div style="border-top:2px solid var(--accent);padding-top:1.6vh">
+        <div class="t-cat" style="color:var(--accent);margin-bottom:.8vh">Ryan Holiday</div>
+        <p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,1vw);line-height:1.55;color:var(--text-primary);font-weight:400">前媒体操纵者，《障碍即道路》作者。Daily Stoic 邮件订阅者超过 <strong style="color:var(--accent)">100 万</strong>。</p>
+      </div>
+      <div style="border-top:1px solid var(--border-subtle);padding-top:1.6vh">
+        <div class="t-cat" style="margin-bottom:.8vh">James Stockdale</div>
+        <p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,1vw);line-height:1.55;color:var(--text-secondary);font-weight:400">越战战俘，靠爱比克泰德《手册》在战俘营撑过了 <strong>7.5 年</strong>。</p>
+      </div>
+      <div style="border-top:1px solid var(--border-subtle);padding-top:1.6vh">
+        <div class="t-cat" style="margin-bottom:.8vh">不确定性时代</div>
+        <p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,1vw);line-height:1.55;color:var(--text-secondary);font-weight:400">斯多葛主义 2300 年前就是为失控环境设计的。今天：信息过载、裁员、疫情——它比任何时代都更适用。</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P6 · S08 · Duo Compare · 斯多葛 vs 伊壁鸠鲁
+     ═══════════════════════════════════════════════════════════ -->
+<section class="slide grey" data-layout="S08" data-animate="duo-mirror">
+<div class="canvas-card">
+  <div class="chrome-min">
+    <div class="l">哲学对话 · Two Schools</div>
+    <div class="r">SS · 26.06.04 · 06 / 07</div>
+  </div>
+  <div data-anim="head" style="display:flex;flex-direction:column;gap:.8vh">
+    <div class="t-cat accent">斯多葛 vs 伊壁鸠鲁 · Two Answers</div>
+    <h2 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(5.2vw,9.2vh);line-height:1;letter-spacing:-.03em">
+      同一个问题，两种答案
+    </h2>
+  </div>
+  <div class="duo-compare">
+    <div class="col accent">
+      <div class="col-tag">斯多葛 Stoics</div>
+      <div class="col-ttl" style="color:var(--accent)">入世<br/>行动</div>
+      <div class="col-desc">目标是德性本身。主动投身公共事务，在体制内行动，同时内心保持距离。马可·奥勒留是皇帝，塞涅卡是顾问，爱比克泰德开学校。</div>
+      <ul class="col-list">
+        <li>最高目标：德性（Virtue）</li>
+        <li>主动参与政治与社会</li>
+        <li>借助理性超越痛苦</li>
+        <li>接受无法改变，全力改变能改变的</li>
+      </ul>
+    </div>
+    <div class="vrule"></div>
+    <div class="col">
+      <div class="col-tag">伊壁鸠鲁 Epicureans</div>
+      <div class="col-ttl">退隐<br/>宁静</div>
+      <div class="col-desc">目标是宁静与快乐（ataraxia）。在雅典城外买了一块花园——"退出政治，通过节制和回避获得安宁"。</div>
+      <ul class="col-list">
+        <li>最高目标：宁静（ataraxia）</li>
+        <li>退出政治，"隐居花园"</li>
+        <li>通过节制和回避避免痛苦</li>
+        <li>外物同样无差别，可利用</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P7 · S10 · Split Closing · 三种修炼 + IKB 宣言
+     ═══════════════════════════════════════════════════════════ -->
+<section class="slide split" data-layout="S10" data-animate="split-statement">
+<div class="canvas-card">
+  <div class="split-half">
+    <!-- 左半 · IKB 宣言 + ASCII 呼吸场 -->
+    <div class="half b-accent" style="justify-content:space-between;position:relative;overflow:hidden">
+      <canvas class="ascii-bg" aria-hidden="true"></canvas>
+      <div class="chrome-min" style="margin-bottom:0;position:relative;z-index:1">
+        <div class="l">07 / 07</div>
+        <div class="r">CLOSING</div>
+      </div>
+      <div data-anim="manifesto" style="display:flex;flex-direction:column;gap:2vh;position:relative;z-index:1">
+        <div class="t-meta" style="color:rgba(255,255,255,.75);letter-spacing:.22em;margin-bottom:1.2vh">MANIFESTO</div>
+        <h2 style="font-family:var(--sans),var(--sans-zh);font-size:min(7.4vw,12.8vh);line-height:.94;letter-spacing:-.025em;font-weight:200;color:#fff">
+          风暴来临<br/>时的<br/><span style="font-style:italic;font-weight:300">选择</span>
+        </h2>
+        <div style="font-family:var(--sans),var(--sans-zh);font-size:max(17px,1.05vw);line-height:1.6;color:rgba(255,255,255,.82);font-weight:300;max-width:34ch;margin-top:1.2vh">
+          斯多葛主义从海难开始，本来就是为风暴准备的。不是去哀悼失去的货物，而是跟上那个经过的哲学家。你随时可以做同样的选择。
+        </div>
+      </div>
+      <div data-anim="signature" style="display:flex;justify-content:space-between;align-items:end;border-top:1px solid rgba(255,255,255,.22);padding-top:2vh;position:relative;z-index:1">
+        <div class="t-meta" style="color:rgba(255,255,255,.55)">斯多葛主义 · 两千年</div>
+        <div class="t-meta" style="color:rgba(255,255,255,.55)">2026.06.04</div>
+      </div>
+    </div>
+
+    <!-- 右半 · 三种核心修炼 -->
+    <div class="half" style="justify-content:space-between">
+      <div class="chrome-min">
+        <div class="l">三种核心修炼</div>
+        <div class="r">Today's Practice</div>
+      </div>
+      <div data-anim="rules" style="display:flex;flex-direction:column;gap:0">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:2vw;align-items:start;padding:2.4vh 0;border-top:1px solid var(--border-subtle)">
+          <div style="font-family:var(--sans);font-weight:200;font-size:min(4.2vw,7.4vh);line-height:.9;color:var(--text-primary)">01</div>
+          <div>
+            <h3 style="font-family:var(--sans),var(--sans-zh);font-weight:500;font-size:max(18px,1.35vw);line-height:1.2;letter-spacing:-.01em;margin-bottom:.9vh">消极想象</h3>
+            <p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,.92vw);line-height:1.6;color:var(--text-secondary);font-weight:400">想象你最害怕失去的东西已经失去了。你会发现那些无法承受的失去，其实是可以承受的——同时突然意识到你现在拥有的有多珍贵。</p>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:2vw;align-items:start;padding:2.4vh 0;border-top:1px solid var(--border-subtle)">
+          <div style="font-family:var(--sans);font-weight:200;font-size:min(4.2vw,7.4vh);line-height:.9;color:var(--text-primary)">02</div>
+          <div>
+            <h3 style="font-family:var(--sans),var(--sans-zh);font-weight:500;font-size:max(18px,1.35vw);line-height:1.2;letter-spacing:-.01em;margin-bottom:.9vh">控制二分法</h3>
+            <p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,.92vw);line-height:1.6;color:var(--text-secondary);font-weight:400">每当感到焦虑，停下来问："这件事在我的控制之内吗？"如果是，专注行动；如果不是，彻底放手，不再内耗。</p>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:2vw;align-items:start;padding:2.4vh 0;border-top:1px solid var(--border-subtle);border-bottom:2px solid var(--accent)">
+          <div style="font-family:var(--sans);font-weight:200;font-size:min(4.2vw,7.4vh);line-height:.9;color:var(--accent)">03</div>
+          <div>
+            <h3 style="font-family:var(--sans),var(--sans-zh);font-weight:500;font-size:max(18px,1.35vw);line-height:1.2;letter-spacing:-.01em;color:var(--accent);margin-bottom:.9vh">晨省与暮思</h3>
+            <p style="font-family:var(--sans),var(--sans-zh);font-size:max(16px,.92vw);line-height:1.6;color:var(--text-secondary);font-weight:400">早晨问：今天可能发生什么困难，我怎么应对？傍晚回顾：有没有在无法控制的事上浪费精力？这是认知校准，不是心理咨询。</p>
+          </div>
+        </div>
+      </div>
+      <div data-anim="foot" class="t-meta" style="color:var(--text-helper);text-align:right">→ 完 · 你随时可以做同样的选择</div>
+    </div>
+  </div>
+</div>
+</section>
+
+</div><!-- #deck -->
+<div id="nav"></div>
+
+<!-- ── WebGL 网格背景 ── -->
+<script>
+const VS=`attribute vec2 position;void main(){gl_Position=vec4(position,0.0,1.0);}`;
+const FS=`precision highp float;
+uniform vec2 u_resolution;uniform float u_time;uniform vec2 u_mouse;uniform float u_dark;uniform vec3 u_accent;
+float gl(vec2 uv,float sp,float th){vec2 g=abs(fract(uv/sp)-.5);float d=min(g.x,g.y);return 1.-smoothstep(th-.005,th+.005,d);}
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution.xy;float asp=u_resolution.x/u_resolution.y;
+  vec2 p=uv;p.x*=asp;
+  vec2 gp=p+vec2(u_time*.008,u_time*.005);
+  float mg=gl(gp,.12,.012);float sg=gl(gp,.024,.04)*.4;
+  vec2 m=u_mouse;m.x*=asp;float md=length(p-m);float mi=exp(-md*4.)*.5;
+  float gs=(mg+sg*.5)*(.45+mi);
+  vec3 lc=mix(vec3(.08),vec3(.92),u_dark);vec3 bc=mix(vec3(.97,.97,.96),vec3(.06,.06,.07),u_dark);
+  vec3 col=bc;col=mix(col,lc,gs*.55);col=mix(col,u_accent,mi*.18);
+  gl_FragColor=vec4(col,1.);
+}`;
+const mouse={x:.5,y:.5};
+addEventListener('mousemove',e=>{mouse.x=e.clientX/innerWidth;mouse.y=1-e.clientY/innerHeight});
+function bootGL(id){
+  const c=document.getElementById(id);if(!c)return()=>false;
+  const gl=c.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:false});if(!gl)return()=>false;
+  const mk=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh};
+  const pr=gl.createProgram();gl.attachShader(pr,mk(gl.VERTEX_SHADER,VS));gl.attachShader(pr,mk(gl.FRAGMENT_SHADER,FS));
+  gl.linkProgram(pr);gl.useProgram(pr);
+  const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+  const pos=gl.getAttribLocation(pr,'position');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
+  const lR=gl.getUniformLocation(pr,'u_resolution'),lT=gl.getUniformLocation(pr,'u_time'),
+        lM=gl.getUniformLocation(pr,'u_mouse'),lD=gl.getUniformLocation(pr,'u_dark'),lA=gl.getUniformLocation(pr,'u_accent');
+  const resize=()=>{const d=Math.min(devicePixelRatio||1,2);c.width=innerWidth*d;c.height=innerHeight*d;gl.viewport(0,0,c.width,c.height)};
+  addEventListener('resize',resize);resize();
+  function ra(){const cs=getComputedStyle(document.documentElement);const h=cs.getPropertyValue('--accent').trim()||'#002FA7';const m=h.match(/^#([0-9a-f]{6})$/i);if(!m)return[0,.18,.65];const n=parseInt(m[1],16);return[((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255]}
+  let acc=ra(),dk=0;
+  return(t,isDark)=>{if(isDark!==undefined)dk=isDark?1:0;acc=ra();gl.uniform2f(lR,c.width,c.height);gl.uniform1f(lT,t);gl.uniform2f(lM,mouse.x,mouse.y);gl.uniform1f(lD,dk);gl.uniform3f(lA,acc[0],acc[1],acc[2]);gl.drawArrays(gl.TRIANGLES,0,6);return true};
+}
+let dm=false,gc=null,gR=0,gT0=Date.now();
+function startGrid(){if(document.body.classList.contains('canvas-mode')||window.__lowPowerMode||gR)return;if(!gc)gc=bootGL('bg-grid');if(!gc)return;gT0=Date.now();function loop(){if(window.__lowPowerMode){gR=0;return}const t=(Date.now()-gT0)/1000;gc(t,dm);gR=requestAnimationFrame(loop)}gR=requestAnimationFrame(loop)}
+function stopGrid(){if(gR)cancelAnimationFrame(gR);gR=0}
+if(document.body.classList.contains('canvas-mode')){const c=document.getElementById('bg-grid');if(c)c.remove()}else startGrid();
+addEventListener('swiss-low-power-change',e=>{e.detail.on?stopGrid():startGrid()});
+
+// ── 导航 ──
+const deck=document.getElementById('deck');
+const slides=deck.querySelectorAll('.slide');
+const nav=document.getElementById('nav');
+let idx=0,total=slides.length,lock=false;
+deck.style.width=(total*100)+'vw';
+slides.forEach((s,i)=>{const b=document.createElement('button');b.className='dot';b.dataset.i=i;b.setAttribute('aria-label','Page '+(i+1));b.onclick=()=>go(i);nav.appendChild(b)});
+function go(n){
+  if(lock)return;idx=Math.max(0,Math.min(total-1,n));window.__currentSlideIndex=idx;
+  deck.style.transform=`translateX(${-idx*100}vw)`;
+  nav.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  const el=slides[idx];const isDark=el.classList.contains('dark')||el.classList.contains('accent');
+  document.body.classList.toggle('dark-bg',isDark);dm=isDark;
+  if(window.__playSlide)setTimeout(()=>window.__playSlide(idx),450);
+  lock=true;setTimeout(()=>lock=false,700);
+}
+
+// ── ESC 索引 ──
+let ovOn=false;const ov=document.createElement('div');
+ov.id='overview';ov.style.cssText='position:fixed;inset:0;z-index:100;background:rgba(250,250,248,.96);backdrop-filter:blur(12px);display:none;overflow-y:auto;padding:4vh 4vw';
+document.body.appendChild(ov);
+function buildOv(){ov.innerHTML='';const g=document.createElement('div');g.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:2vh 1.6vw;max-width:90vw;margin:0 auto';slides.forEach((s,i)=>{const card=document.createElement('div');card.style.cssText='cursor:pointer;overflow:hidden;border:2px solid '+(i===idx?'var(--accent)':'rgba(0,0,0,.12)')+';transition:border-color .2s';card.onmouseenter=()=>card.style.borderColor='rgba(0,0,0,.4)';card.onmouseleave=()=>card.style.borderColor=i===idx?'var(--accent)':'rgba(0,0,0,.12)';const wrap=document.createElement('div');const isDark=s.classList.contains('dark')||s.classList.contains('accent');wrap.style.cssText='width:100%;aspect-ratio:16/9;overflow:hidden;position:relative;pointer-events:none;background:'+(isDark?'var(--ink)':'var(--paper)');const clone=s.cloneNode(true);clone.style.cssText='width:100vw;height:100vh;transform:scale('+(1/4.5)+');transform-origin:top left;position:absolute;top:0;left:0;pointer-events:none';wrap.appendChild(clone);const lbl=document.createElement('div');lbl.style.cssText='padding:6px 10px;font-family:var(--mono);font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);opacity:.7';lbl.textContent=(i+1)+' / '+total;card.appendChild(wrap);card.appendChild(lbl);card.onclick=()=>{toggleOv();go(i)};g.appendChild(card)});ov.appendChild(g)}
+function toggleOv(){ovOn=!ovOn;if(ovOn){buildOv();ov.style.display='block'}else ov.style.display='none'}
+
+addEventListener('keydown',e=>{
+  if(e.key==='Escape'){e.preventDefault();toggleOv();return}
+  if(e.key&&e.key.toLowerCase()==='b'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){e.preventDefault();window.__setLowPowerMode(!window.__lowPowerMode);return}
+  if(ovOn)return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '||e.key==='ArrowDown'){go(idx+1);return}
+  if(e.key==='ArrowLeft'||e.key==='PageUp'||e.key==='ArrowUp')go(idx-1);
+  if(e.key==='Home')go(0);if(e.key==='End')go(total-1);
+});
+let wTO=null,wAcc=0;
+addEventListener('wheel',e=>{wAcc+=e.deltaY+e.deltaX;if(Math.abs(wAcc)>50){go(idx+(wAcc>0?1:-1));wAcc=0}clearTimeout(wTO);wTO=setTimeout(()=>wAcc=0,150)},{passive:true});
+let tx=0,ty=0;
+addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy))go(idx+(dx<0?1:-1))},{passive:true});
+const sp=new URLSearchParams(location.search).get('slide');
+go(sp?Math.max(0,Number(sp)-1):0);
+</script>
+
+<!-- ── Lucide 图标 ── -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>if(typeof lucide!=='undefined')lucide.createIcons();</script>
+
+<!-- ── Motion One 动效 ── -->
+<script type="module">
+let motion;
+try{motion=await import('https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm')}
+catch(e){document.querySelectorAll('[data-anim]').forEach(el=>{el.style.opacity='1';el.style.transform='none'})}
+
+if(motion){
+  const{animate}=motion;
+  document.body.classList.add('motion-ready');
+  const EXP=[0,0,.3,1],PROD=[.2,0,.38,.9];
+  const slides=[...document.querySelectorAll('.slide')];
+  let lastIdx=-1;
+  const fade=(el,opts={})=>animate(el,{opacity:[0,1],y:[opts.y??12,0]},{duration:opts.dur??0.6,delay:opts.delay??0,easing:opts.ease??EXP});
+
+  function playSlide(n){
+    if(n===lastIdx)return;lastIdx=n;
+    const slide=slides[n];if(!slide)return;
+    if(window.__lowPowerMode){slide.querySelectorAll('[data-anim]').forEach(el=>{el.style.opacity='1';el.style.transform='none'});return}
+    const recipe=slide.dataset.animate||'grid-reveal';
+    slide.querySelectorAll('[data-anim]').forEach(el=>{el.style.opacity='';el.style.transform=''});
+
+    if(recipe==='hero'){
+      const chrome=slide.querySelector('.chrome-min');
+      if(chrome)animate(chrome,{opacity:[0,1]},{duration:.28,easing:PROD});
+      fade(slide.querySelector('[data-anim="kicker"]'),{delay:.15,dur:.5,y:8});
+      fade(slide.querySelector('[data-anim="title"]'),{delay:.28,dur:.72,y:22});
+      fade(slide.querySelector('[data-anim="bottom"]'),{delay:.55,dur:.52,y:8});
+    } else if(recipe==='statement-rise'){
+      fade(slide.querySelector('[data-anim="kicker"]'),{delay:.1,dur:.5});
+      fade(slide.querySelector('[data-anim="title"]'),{delay:.24,dur:.7,y:18});
+      fade(slide.querySelector('[data-anim="lead"]'),{delay:.5,dur:.6,y:8});
+      fade(slide.querySelector('[data-anim="foot"]'),{delay:.72,dur:.5,y:6});
+    } else if(recipe==='duo-mirror'){
+      fade(slide.querySelector('[data-anim="head"]'),{delay:.1,dur:.5,y:8});
+      const cols=[...slide.querySelectorAll('.duo-compare .col')];
+      const vr=slide.querySelector('.duo-compare .vrule');
+      if(vr)animate(vr,{opacity:[0,1],scaleY:[0,1]},{duration:.5,delay:.2,easing:EXP});
+      if(cols[0])animate(cols[0],{opacity:[0,1],x:[-16,0]},{duration:.6,delay:.3,easing:EXP});
+      if(cols[1])animate(cols[1],{opacity:[0,1],x:[16,0]},{duration:.6,delay:.3,easing:EXP});
+    } else if(recipe==='split-statement'){
+      const halves=[...slide.querySelectorAll('.half')];
+      if(halves[0])animate(halves[0],{opacity:[0,1],y:[18,0]},{duration:.7,delay:0,easing:EXP});
+      if(halves[1])animate(halves[1],{opacity:[0,1],y:[18,0]},{duration:.6,delay:.22,easing:EXP});
+      // reveal 所有内部 [data-anim] 子元素
+      const inner=[...slide.querySelectorAll('[data-anim]')];
+      inner.forEach((el,i)=>fade(el,{delay:.3+i*.1,dur:.5,y:8}));
+    } else {
+      // grid-reveal 通用
+      const all=[...slide.querySelectorAll('[data-anim]')];
+      all.forEach((el,i)=>fade(el,{delay:.12+i*.1,dur:.52,y:10}));
+    }
+  }
+
+  window.__playSlide=playSlide;
+  setTimeout(()=>playSlide(window.__currentSlideIndex||0),200);
+}
+</script>
+
+<!-- ── ASCII 呼吸场 (IKB 封面/封底) ── -->
+<script>
+(function(){
+  function boot(canvas){
+    const ctx=canvas.getContext('2d');if(!ctx)return;
+    const chars='01ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz·—';
+    let t=0,raf=0;
+    function resize(){canvas.width=canvas.offsetWidth||800;canvas.height=canvas.offsetHeight||600}
+    function draw(){
+      if(window.__lowPowerMode){raf=0;return}
+      resize();
+      const W=canvas.width,H=canvas.height,fs=Math.max(11,Math.floor(W/62));
+      ctx.clearRect(0,0,W,H);ctx.font=`${fs}px "JetBrains Mono","Courier New",monospace`;ctx.fillStyle='rgba(255,255,255,.38)';
+      const cols=Math.ceil(W/fs),rows=Math.ceil(H/(fs*1.6));
+      for(let r=0;r<rows;r++){for(let c=0;c<cols;c++){
+        const nx=(c/cols)*3.2,ny=(r/rows)*2.8;
+        const noise=Math.sin(nx*1.4+t*.4)*Math.cos(ny*1.6-t*.3)+Math.sin(nx*3.1-t*.25)*Math.cos(ny*2.4+t*.18);
+        if(noise>.55){const ci=Math.floor(((noise+1)/2)*chars.length)%chars.length;ctx.globalAlpha=Math.min(.62,(noise-.55)*1.6);ctx.fillText(chars[ci],c*fs,r*fs*1.6+fs)}
+      }}
+      ctx.globalAlpha=1;t+=.012;raf=requestAnimationFrame(draw);
+    }
+    draw();
+    addEventListener('swiss-low-power-change',e=>{if(e.detail.on){cancelAnimationFrame(raf);raf=0}else if(!raf)draw()});
+  }
+  document.querySelectorAll('canvas.ascii-bg').forEach(boot);
+})();
+</script>
+</body>
+</html>
